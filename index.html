@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Триазавирин - адаптивный баннер</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden}
+body{font-family:'Nunito Sans',Arial,sans-serif}
+#banner{position:relative;width:100%;height:100%;overflow:hidden;border:1px solid rgba(0,0,0,.65);background:linear-gradient(112deg,#0f71b9 20%,#1689b6 54%,#45ab86 100%);color:white;container-type:size}
+.layer{position:absolute}
+.photo{z-index:1;background-repeat:no-repeat}
+.brand{z-index:5;object-fit:fill}
+.claims{z-index:5;display:flex;flex-direction:column;text-transform:uppercase;font-weight:500}
+.claim{display:flex;align-items:flex-start}
+.dot{flex:none;background:white;border-radius:1px}
+.pack{z-index:2;object-fit:contain;filter:drop-shadow(1px 3px 2px #07525066)}
+.legal-bg{z-index:3;left:0;bottom:0;width:100%;pointer-events:none;background:linear-gradient(to top,rgba(69,171,134,.95),rgba(69,171,134,0))}
+.admark{z-index:6;color:#fff;font-weight:400;}
+.medical{z-index:6;object-fit:fill}
+</style>
+</head>
+<body>
+<div id="banner" role="img" aria-label="Триазавирин. Прямой удар против вирусов гриппа и ОРВИ. Антивирусный эффект через час. Имеются противопоказания, необходимо проконсультироваться со специалистом.">
+ <div class="photo layer" id="photo"></div><img class="brand layer" src="assets/logo.svg" alt="">
+ <div class="claims layer"><div class="claim"><i class="dot"></i><span id="claim1">Прямой удар против вирусов гриппа и ОРВИ</span></div><div class="claim"><i class="dot"></i><span id="claim2">Антивирусный эффект через час</span></div></div>
+ <img class="pack layer" src="assets/pack.png" alt=""><div class="legal-bg layer"></div>
+ <div class="admark layer" id="admark">РУ ЛП-№ (007244)- (РГ-RU). Реклама. Рекламодатель ООО «Завод Медсинтез». ИНН 6629012040.</div>
+ <img class="medical layer" id="medical" src="assets/medical.svg" alt="Имеются противопоказания, необходимо проконсультироваться со специалистом">
+</div>
+<script>
+/* Один баннер. Четыре согласованных оригинала являются опорными схемами,
+   между ними размер и геометрия масштабируются под фактический контейнер.
+   Режим выбирается по пропорциям, а не по конкретной ширине окна. */
+(()=>{'use strict';
+const banner = document.getElementById('banner');
+const photo = document.getElementById('photo');
+const brand = document.querySelector('.brand');
+const claims = document.querySelector('.claims');
+const pack = document.querySelector('.pack');
+const medical = document.getElementById('medical');
+const mark = document.getElementById('admark');
+const bg = document.querySelector('.legal-bg');
+const c1 = document.getElementById('claim1');
+const c2 = document.getElementById('claim2');
+// Четыре согласованные исходные композиции - не менять без необходимости.
+const specs = {
+ strip:{w:1170,h:150,photo:[0,0,365,150],brand:[400,12,327,46],claims:[400,61,575,76],pack:[950,-10,162,145],mark:[365,112,800,12],med:[365,131.13,774,15.87],bg:0,fs:17,gap:6,dot:[9,6,5],claimGap:10,clip:'polygon(0 0,100% 0,91% 100%,0 100%)',source:'photo.jpg',pos:'center 49%',twoline:false},
+ wide:{w:1068,h:297,photo:[0,0,434,297],brand:[450,22,358,53],claims:[450,94,445,145],pack:[864,42,192,214],mark:[434,233,620,26],med:[434,256.87,598,37.13],bg:91,fs:19,gap:14,dot:[9,6,7],claimGap:10,clip:'polygon(0 0,100% 0,90% 100%,0 100%)',source:'photo.jpg',pos:'51% center',twoline:false},
+ square:{w:375,h:360,photo:[0,0,184,359],brand:[193,54,169,32],claims:[193,96,171,100],pack:[193,197,115,114],mark:[5,311,365,22],med:[3,331.39,369,25.61],bg:84,fs:11,gap:16,dot:[6,4,4],claimGap:5,clip:'polygon(0 0,100% 0,91% 100%,0 100%)',source:'photo_vertical.jpg',pos:'left center',twoline:true},
+ portrait:{w:310,h:400,photo:[0,0,310,190],brand:[15,205,268,47],claims:[17,254,182,94],pack:[183,240,115,112],mark:[5,350,300,15],med:[3,368.45,304,28.55],bg:69,fs:13,gap:8,dot:[6,4,5],claimGap:5,clip:'polygon(0 0,100% 0,100% 89%,0 100%)',source:'photo.jpg',pos:'center 53%',twoline:true}
+};
+
+/* ========================================================================
+   ИНДИВИДУАЛЬНЫЕ КОРРЕКТИРОВКИ КОНТРОЛЬНЫХ РАЗМЕРОВ
+   ========================================================================
+   В каждой записи можно менять отдельные параметры; 0 = без изменений.
+   Координаты и размеры - в пикселях именно данного контрольного формата.
+
+   logo:   x, y, width, height   - смещение и размер логотипа
+   bullets:x, y, width, height   - блок с тезисами
+   pack:   x, y, width, height   - упаковка
+   photo:  x, y, width, height   - прямоугольник с фотографией
+   mark:   x, y, width, height   - рекламная маркировка
+   medical:x, width             - позиция и изменение ширины мед. ценза
+   fontSize  - прибавка к размеру шрифта тезисов, px
+   markFont  - прибавка к размеру шрифта маркировки, px
+   bulletsGap - прибавка к отступу между двумя тезисами, px
+   photoShift - горизонтальный сдвиг фотографии внутри маски, px
+   logoWidth - точная ширина логотипа, px (в отличие от logo.width)
+   markBreak - перенос рекламной маркировки на вторую строку
+   firstClaimLines, secondClaimLines - точные строки текста, в кавычках
+   logo и bullets регулируются независимо.
+
+   Пример: для 375×360 увеличь логотип на 8 px и опусти тезисы на 5 px:
+   "375x360": { logo: { width: 8 }, bullets: { y: 5 } },
+
+   ВАЖНО: рядом с контрольной точкой действие поправки плавно ослабевает.
+   Это позволяет не создавать резких скачков у промежуточных размеров.
+   Не изменяй ключи размеров и не удаляй записи без необходимости.
+*/
+const formatAdjustments = {
+  "1170x150": {},
+  "1265x150": {},
+  "1300x150": {},
+  "1320x150": {},
+  "870x150": {},
+
+  // Узкие горизонтальные форматы
+  "343x150": {
+    logo: { width: 130 },
+    medical: { width: 7 },
+    fontSize: -2,
+    markFont: -1.5,
+    bullets: { y: -5 },
+    fullBottomLegal: true,
+    photoScale: 0.95, 
+    photoY:-10,
+    photoX:10
+  },
+  "375x100": {
+    logo: { width: 130, x: -55, y:-5 },
+    medical: { width: 8 },
+    fontSize: -3,
+    markFont: -1.5,
+    mark: { y: -20 },
+    bullets: { y: -5, x:-15 },
+    pack: { y: -25},
+    photo: {x:-20},
+    photoY:-10,
+    photoScale:1.2,
+    firstClaimLines: ["Прямой удар против", "вирусов гриппа и ОРВИ"],
+    secondClaimLines: ["Антивирусный эффект через час"], 
+    fullBottomLegal: true
+  },
+  "380x150": {
+    logo: {y:-5, x:10},    
+    bullets: { y: -10, x:10 },
+    fontSize:-1.5,
+    mark: { y: -12 },
+    pack:{width:80,  x:-45},
+    markFont: -1.8,
+    photoX:10,
+    fullBottomLegal: true,
+    secondClaimLines: ["Антивирусный","эффект через час"], 
+  },
+
+  // Вертикальные и квадратные форматы: маркировка с переносом строки
+  "250x430": { markBreak: true },
+  "259x455": { markBreak: true },
+  "282x400": { markBreak: true },
+  "345x300": { markBreak: true, mark:{y:-8}, fontSize:3},
+  "310x400": { markBreak: true, logo:{y:-10}},
+  "375x360": { markBreak: true, fontSize:3, mark:{y:-3}},
+  "345x400": { markBreak: true },
+  "200x330": { markBreak: true, photoX:-10 },
+
+  // Компактные форматы: ширина логотипа ЗАДАЕТСЯ в px (не прибавляется)
+  "270x155": {logoWidth:120, logo: {x:20 }, fontSize: -3, photoType: "vertical", markFont: -1.5, fullBottomLegal: true, firstClaimLines: ["Прямой удар против", "вирусов гриппа и ОРВИ"], photoX:5, photoY:10, photoScale: 1.15, pack:{width:80, y:28, x:-50}},
+  "275x160": {logoWidth:120, fontSize: -2.5, photoType: "vertical", fullBottomLegal: true, firstClaimLines: ["Прямой удар против", "вирусов гриппа и ОРВИ"], pack:{width:80, y:28, x:-50}, photoX:5, photoY:10, photoScale: 1.15,  },
+  "336x120": {
+    logoWidth: 120,
+    fontSize: -2,
+    firstClaimLines: ["Прямой удар против", "вирусов гриппа и ОРВИ"],
+    fullBottomLegal: true,
+    photoY:-10, 
+    markFont:-1
+  },
+
+  "1020x297": {fontSize:3, firstClaimLines: ["Прямой удар против", "вирусов гриппа и ОРВИ"]},
+  "1068x297": {fontSize:3, firstClaimLines: ["Прямой удар против", "вирусов гриппа и ОРВИ"]}
+};
+
+/* Поправки плавно интерполируются вокруг конкретных контрольных размеров.
+   На самой контрольной точке ее поправка имеет полную силу. */
+function resolveAdjustments(width, height) {
+  const entries = Object.entries(formatAdjustments);
+  const all = [];
+
+  for (const [size, values] of entries) {
+    const [w, h] = size.split('x').map(Number);
+    const distance = Math.hypot(Math.log(width / w), Math.log(height / h));
+    // Точно в контрольной точке соседние корректировки не вмешиваются.
+    if (distance < 0.000001) return values;
+    if (!Object.keys(values).length) continue;
+    const influence = Math.exp(-Math.pow(distance / 0.19, 2));
+    if (influence > 0.00001) all.push({ values, influence });
+  }
+
+  // Независимая интерполяция каждого параметра; дефолт всегда равен нулю.
+  const merged = {};
+  const add = (target, delta, weight) => {
+    for (const [key, value] of Object.entries(delta)) {
+      if (typeof value === 'number') target[key] = (target[key] || 0) + value * weight;
+      else if (value && typeof value === 'object' && !Array.isArray(value)) {
+        target[key] ||= {};
+        add(target[key], value, weight);
+      }
+    }
+  };
+  // Сумма влияний ограничена единицей во избежание усиления поправок.
+  const weightSum = all.reduce((sum, item) => sum + item.influence, 0);
+  const scale = Math.max(1, weightSum);
+  all.forEach(item => add(merged, item.values, item.influence / scale));
+  return merged;
+}
+
+function adjustBox(base, delta = {}) {
+  return [
+    base[0] + (delta.x || 0),
+    base[1] + (delta.y || 0),
+    Math.max(1, base[2] + (delta.width || 0)),
+    Math.max(1, base[3] + (delta.height || 0))
+  ];
+}
+
+const px=x=>`${Math.round(x*100)/100}px`;
+function place(el,v,sx,sy){Object.assign(el.style,{left:px(v[0]*sx),top:px(v[1]*sy),width:px(v[2]*sx),height:px(v[3]*sy)});}
+function render() {
+ const w = banner.clientWidth;
+ const h = banner.clientHeight;
+ if (!w || !h) return;
+
+ // Группа композиции определяется одновременно шириной и высотой.
+ const r = w / h;
+ const key = r >= 4.7 ? 'strip' : r >= 1.48 ? 'wide' : r >= .92 ? 'square' : 'portrait';
+ const d = specs[key];
+ const sx = w / d.w;
+ const sy = h / d.h;
+ // Ключ формата определяем по внешнему размеру, включая рамку 1 px.
+ const sizeKey = `${banner.offsetWidth}x${banner.offsetHeight}`;
+ const exactTweaks = formatAdjustments[sizeKey] || {};
+ const tweaks = resolveAdjustments(banner.offsetWidth, banner.offsetHeight);
+ // Строки и переносы применяем только к точному контрольному формату.
+
+ const needBreak = exactTweaks.markBreak === true;
+ mark.innerHTML =
+   'РУ ЛП-№ (007244)- (РГ-RU).' +
+   (needBreak ? '<br>' : ' ') +
+   'Реклама. Рекламодатель ООО «Завод Медсинтез». ИНН 6629012040.';
+
+ /* Typography is scaled uniformly (not stretched), anchored to available space. */
+ const textScale=Math.min(sx,sy);const readable=Math.min(Math.max(textScale,.60),2.5);
+place(photo, adjustBox(d.photo, tweaks.photo), sx, sy);
+
+ // Исходник фотографии выбирается по композиции или настройке формата.
+ const photoSource = exactTweaks.photoType === 'vertical'
+     ? 'photo_vertical.jpg'
+     : d.source;
+
+ photo.style.backgroundImage = `url('assets/${photoSource}')`;
+ photo.style.backgroundRepeat = 'no-repeat';
+ photo.style.clipPath = d.clip;
+
+ // Реальный масштаб cover на основе размеров исходных файлов.
+ // Фото остается внутри той же маски; менять можно только photoX/Y/Scale.
+ const imageDimensions = {
+     'photo.jpg': [1822, 1016],
+     'photo_vertical.jpg': [1133, 2048]
+ };
+ const [naturalW, naturalH] = imageDimensions[photoSource];
+ const imageScale = Math.max(
+     photo.clientWidth / naturalW,
+     photo.clientHeight / naturalH
+ );
+ const photoScale = Math.max(0.1, exactTweaks.photoScale ?? 1);
+ const scaledW = naturalW * imageScale * photoScale;
+ const scaledH = naturalH * imageScale * photoScale;
+ photo.style.backgroundSize = `${px(scaledW)} ${px(scaledH)}`;
+
+ // Независимое перемещение по осям, без повторных переопределений.
+ const photoX = (tweaks.photoX ?? 0) + (tweaks.photoShift ?? 0);
+ const photoY = tweaks.photoY ?? 0;
+ const [baseX = 'center', baseY = 'center'] = d.pos.split(/\s+/);
+ const toPosition = value => ({
+     left: '0%', top: '0%',
+     center: '50%', right: '100%', bottom: '100%'
+ }[value] ?? value);
+ photo.style.backgroundPosition =
+     `calc(${toPosition(baseX)} + ${photoX}px) ` +
+     `calc(${toPosition(baseY)} + ${photoY}px)`;
+
+ place(brand,adjustBox(d.brand,tweaks.logo),sx,sy);
+ if (exactTweaks.logoWidth != null) brand.style.width = px(exactTweaks.logoWidth);
+ place(claims,adjustBox(d.claims,tweaks.bullets),sx,sy);
+ place(pack,adjustBox(d.pack,tweaks.pack),sx,sy);
+ place(mark,adjustBox(d.mark,tweaks.mark),sx,sy);
+ mark.style.transform =
+    (key === 'strip' || key === 'wide')
+        ? 'translateY(5px)'
+        : 'none';
+ const defaultMedicalWidth= key==='strip'?Math.min(w-8,774*sx):key==='wide'?Math.min(w-4,598*sx):w-6;
+ const medWidth=Math.max(8, defaultMedicalWidth+(tweaks.medical?.width||0));
+ /* Full legally reserved 7% of total display area for disclaimer. */
+ const medHeight=Math.min(h*.19,(w*h*.07)/medWidth);const medLeft=(key==='strip'?365*sx:key==='wide'?434*sx:3)+(tweaks.medical?.x||0);
+ Object.assign(medical.style,{left:px(medLeft),top:'auto',bottom:'3px',width:px(medWidth),height:px(medHeight)});
+ medical.src='assets/'+(key==='square'||key==='portrait'?'medical_2line.svg':'medical.svg');
+ // Подложка на ширину всего баннера, охватывает обе нижние надписи.
+ bg.style.height = px(Math.max(d.bg * sy, medHeight + 28));
+ bg.style.display = 'block';
+ claims.style.fontSize=px(Math.max(7,d.fs*readable+(tweaks.fontSize||0)));claims.style.lineHeight=key==='strip'?'1.1':'1.15';claims.style.gap=px(Math.max(0,d.gap*sy+(tweaks.bulletsGap||0)));
+ claims.querySelectorAll('.claim').forEach(el=>el.style.gap=px(d.claimGap*sx));
+ claims.querySelectorAll('.dot').forEach(el=>Object.assign(el.style,{width:px(Math.max(3,d.dot[0]*readable)),height:px(Math.max(3,d.dot[1]*readable)),marginTop:px(d.dot[2]*readable)}));
+ mark.style.fontSize=px(Math.max(6, (key==='square'?11:key==='wide'?13:key==='strip'?11:9)*readable+(tweaks.markFont||0)));mark.style.lineHeight='1';
+ // Нижняя маркировка и медицинский дисклеймер.
+ // При смене формата возвращаем обычное расположение, чтобы не оставались
+ // старые inline-стили от режима fullBottomLegal.
+ mark.style.right = 'auto';
+ mark.style.bottom = 'auto';
+ mark.style.textAlign = 'left';
+ mark.style.whiteSpace = (key === 'strip' || key === 'portrait')
+     ? 'nowrap' : 'normal';
+ bg.style.left = '0px';
+ bg.style.bottom = '0px';
+ bg.style.width = '100%';
+
+ if (exactTweaks.fullBottomLegal === true) {
+     const padX = exactTweaks.legalPadX ?? 8;
+     const gap = exactTweaks.legalGap ?? 2;
+     const legalWidth = Math.max(8, w - 2 * padX);
+     const medH = (w * h * 0.07) / legalWidth;
+
+     // Одинарная строка мед. ценза на всю ширину поверх фотографии.
+     medical.src = 'assets/medical.svg';
+     Object.assign(medical.style, {
+         left: px(padX),
+         top: 'auto',
+         bottom: '2px',
+         width: px(legalWidth),
+         height: px(medH)
+     });
+
+     Object.assign(mark.style, {
+         transform: 'none',
+         left: px(padX),
+         right: 'auto',
+         top: 'auto',
+         bottom: px(medH + gap + 2),
+         width: px(legalWidth),
+         height: 'auto',
+         whiteSpace: 'normal',
+         textAlign: 'left'
+     });
+
+     const markH = mark.getBoundingClientRect().height;
+     bg.style.height = px(medH + gap + markH + 8);
+ }
+ if(key==='square'){c1.innerHTML='Прямой удар<br>против вирусов<br>гриппа и ОРВИ';c2.innerHTML='Антивирусный<br>эффект через час';}
+ else if(key==='portrait'){c1.innerHTML='Прямой удар против вирусов гриппа<br>и ОРВИ';c2.innerHTML='Антивирусный<br>эффект через час';}
+ else if(key==='wide'){c1.innerHTML='Прямой удар против вирусов гриппа<br> и ОРВИ';c2.textContent='Антивирусный эффект через час';}
+ else{c1.textContent='Прямой удар против вирусов гриппа и ОРВИ';c2.textContent='Антивирусный эффект через час';}
+ // Переносы задаются прямо в formatAdjustments.
+ if (exactTweaks.firstClaimLines) c1.innerHTML = exactTweaks.firstClaimLines.join('<br>');
+ if (exactTweaks.secondClaimLines) c2.innerHTML = exactTweaks.secondClaimLines.join('<br>');
+ }
+if('ResizeObserver'in window)new ResizeObserver(render).observe(banner);else window.addEventListener('resize',render);
+render();})();
+</script>
+</body>
+</html>
