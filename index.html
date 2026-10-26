@@ -16,7 +16,7 @@ body{font-family:'Nunito Sans',Arial,sans-serif}
 .dot{flex:none;background:white;border-radius:1px}
 .pack{z-index:2;object-fit:contain;filter:drop-shadow(1px 3px 2px #07525066)}
 .legal-bg{z-index:3;left:0;bottom:0;width:100%;pointer-events:none;background:linear-gradient(to top,rgba(69,171,134,.95),rgba(69,171,134,0))}
-.admark{z-index:6;color:#fff;font-weight:400;}
+.admark{z-index:6;color:#fff;font-weight:400;overflow-wrap:break-word;white-space:normal;hyphens:none}
 .medical{z-index:6;object-fit:fill}
 </style>
 </head>
@@ -45,10 +45,10 @@ const c1 = document.getElementById('claim1');
 const c2 = document.getElementById('claim2');
 // Четыре согласованные исходные композиции - не менять без необходимости.
 const specs = {
- strip:{w:1170,h:150,photo:[0,0,365,150],brand:[400,12,327,46],claims:[400,61,575,76],pack:[950,-10,162,145],mark:[365,112,800,12],med:[365,131.13,774,15.87],bg:0,fs:17,gap:6,dot:[9,6,5],claimGap:10,clip:'polygon(0 0,100% 0,91% 100%,0 100%)',source:'photo.jpg',pos:'center 49%',twoline:false},
- wide:{w:1068,h:297,photo:[0,0,434,297],brand:[450,22,358,53],claims:[450,94,445,145],pack:[864,42,192,214],mark:[434,233,620,26],med:[434,256.87,598,37.13],bg:91,fs:19,gap:14,dot:[9,6,7],claimGap:10,clip:'polygon(0 0,100% 0,90% 100%,0 100%)',source:'photo.jpg',pos:'51% center',twoline:false},
- square:{w:375,h:360,photo:[0,0,184,359],brand:[193,54,169,32],claims:[193,96,171,100],pack:[193,197,115,114],mark:[5,311,365,22],med:[3,331.39,369,25.61],bg:84,fs:11,gap:16,dot:[6,4,4],claimGap:5,clip:'polygon(0 0,100% 0,91% 100%,0 100%)',source:'photo_vertical.jpg',pos:'left center',twoline:true},
- portrait:{w:310,h:400,photo:[0,0,310,190],brand:[15,205,268,47],claims:[17,254,182,94],pack:[183,240,115,112],mark:[5,350,300,15],med:[3,368.45,304,28.55],bg:69,fs:13,gap:8,dot:[6,4,5],claimGap:5,clip:'polygon(0 0,100% 0,100% 89%,0 100%)',source:'photo.jpg',pos:'center 53%',twoline:true}
+ strip:{w:1170,h:150,photo:[0,0,365,150],brand:[400,12,327,46],claims:[400,61,575,76],pack:[950,5,138,120],mark:[365,112,800,12],med:[365,131.13,774,15.87],bg:0,fs:17,gap:6,dot:[9,6,5],claimGap:10,clip:'polygon(0 0,100% 0,91% 100%,0 100%)',source:'photo.jpg',pos:'center 49%',twoline:false},
+ wide:{w:1068,h:297,photo:[0,0,434,297],brand:[430,22,358,53],claims:[430,94,445,145],pack:[864,62,207,180],mark:[434,233,620,26],med:[434,256.87,598,37.13],bg:91,fs:19,gap:14,dot:[9,6,7],claimGap:10,clip:'polygon(0 0,100% 0,90% 100%,0 100%)',source:'photo.jpg',pos:'51% center',twoline:false},
+ square:{w:375,h:360,photo:[0,0,184,359],brand:[193,54,169,32],claims:[193,96,171,100],pack:[193,197,110,96],mark:[5,311,365,22],med:[3,331.39,369,25.61],bg:84,fs:11,gap:16,dot:[6,4,4],claimGap:5,clip:'polygon(0 0,100% 0,91% 100%,0 100%)',source:'photo_vertical.jpg',pos:'left center',twoline:true},
+ portrait:{w:310,h:400,photo:[0,0,310,190],brand:[15,205,268,47],claims:[17,254,182,94],pack:[183,240,110,96],mark:[5,350,300,15],med:[3,368.45,304,28.55],bg:69,fs:13,gap:7,dot:[6,4,5],claimGap:5,clip:'polygon(0 0,100% 0,100% 89%,0 100%)',source:'photo.jpg',pos:'center 53%',twoline:true}
 };
 
 /* ========================================================================
@@ -66,10 +66,10 @@ const specs = {
    fontSize  - прибавка к размеру шрифта тезисов, px
    markFont  - прибавка к размеру шрифта маркировки, px
    bulletsGap - прибавка к отступу между двумя тезисами, px
-   photoShift - горизонтальный сдвиг фотографии внутри маски, px
+   photoX, photoY - позиция картинки внутри маски (px); photoScale - масштаб относительно cover
    logoWidth - точная ширина логотипа, px (в отличие от logo.width)
    markBreak - перенос рекламной маркировки на вторую строку
-   firstClaimLines, secondClaimLines - точные строки текста, в кавычках
+   firstClaimLines, secondClaimLines - прежние ручные переносы (теперь текст переносится автоматически)
    logo и bullets регулируются независимо.
 
    Пример: для 375×360 увеличь логотип на 8 px и опусти тезисы на 5 px:
@@ -88,14 +88,17 @@ const formatAdjustments = {
 
   // Узкие горизонтальные форматы
   "343x150": {
-    logo: { width: 130 },
+    logo: { width: 130, x:20 },
     medical: { width: 7 },
     fontSize: -2,
     markFont: -1.5,
-    bullets: { y: -5 },
+    bullets: { y: -5, x:20 },
     fullBottomLegal: true,
     photoScale: 0.95, 
     photoY:-10,
+    pack:{x:-40},
+    firstClaimLines: ["Прямой удар","против вирусов","гриппа и ОРВИ"],
+    secondClaimLines: ["Антивирусный"," эффект через час"],     
     photoX:10
   },
   "375x100": {
@@ -105,12 +108,12 @@ const formatAdjustments = {
     markFont: -1.5,
     mark: { y: -20 },
     bullets: { y: -5, x:-15 },
-    pack: { y: -25},
+    pack: {y: -25, width:50, x:-40},
     photo: {x:-20},
     photoY:-10,
     photoScale:1.2,
     firstClaimLines: ["Прямой удар против", "вирусов гриппа и ОРВИ"],
-    secondClaimLines: ["Антивирусный эффект через час"], 
+    secondClaimLines: ["Антивирусный эффект", "через час"], 
     fullBottomLegal: true
   },
   "380x150": {
@@ -118,9 +121,10 @@ const formatAdjustments = {
     bullets: { y: -10, x:10 },
     fontSize:-1.5,
     mark: { y: -12 },
-    pack:{width:80,  x:-45},
+    pack:{width:30,  x:-45},
     markFont: -1.8,
-    photoX:10,
+    photoX:10,    
+    photoY:-10,
     fullBottomLegal: true,
     secondClaimLines: ["Антивирусный","эффект через час"], 
   },
@@ -129,26 +133,30 @@ const formatAdjustments = {
   "250x430": { markBreak: true },
   "259x455": { markBreak: true },
   "282x400": { markBreak: true },
-  "345x300": { markBreak: true, mark:{y:-8}, fontSize:3},
+  "345x300": { markBreak: true, mark:{y:-8}, fontSize:3 },
   "310x400": { markBreak: true, logo:{y:-10}},
-  "375x360": { markBreak: true, fontSize:3, mark:{y:-3}},
+  "375x360": { markBreak: true, fontSize:3, mark:{y:-3}, markFont:-1},
   "345x400": { markBreak: true },
-  "200x330": { markBreak: true, photoX:-10 },
+  "200x330": { markBreak: true, photoX:-10, firstClaimLines: ["Прямой удар", "против вирусов", "гриппа и ОРВИ"], markFont:1.5, fontSize:0.5 },
 
   // Компактные форматы: ширина логотипа ЗАДАЕТСЯ в px (не прибавляется)
-  "270x155": {logoWidth:120, logo: {x:20 }, fontSize: -3, photoType: "vertical", markFont: -1.5, fullBottomLegal: true, firstClaimLines: ["Прямой удар против", "вирусов гриппа и ОРВИ"], photoX:5, photoY:10, photoScale: 1.15, pack:{width:80, y:28, x:-50}},
-  "275x160": {logoWidth:120, fontSize: -2.5, photoType: "vertical", fullBottomLegal: true, firstClaimLines: ["Прямой удар против", "вирусов гриппа и ОРВИ"], pack:{width:80, y:28, x:-50}, photoX:5, photoY:10, photoScale: 1.15,  },
+  "270x155": {logoWidth:120, logo: {x:20 }, fontSize: -3, photoType: "vertical", markFont: -1.5, fullBottomLegal: true, firstClaimLines: ["Прямой удар против", "вирусов гриппа и ОРВИ"], photoX:5, photoY:10, photoScale: 1.15, pack:{width:40, y:28, x:-50}},
+  "275x160": {logoWidth:120, fontSize: -3, photoType: "vertical", fullBottomLegal: true, firstClaimLines: ["Прямой удар против", "вирусов гриппа и ОРВИ"], pack:{width:40, y:28, x:-50}, photoX:5, photoY:10, photoScale: 1.15, photo:{x:-20} },
   "336x120": {
     logoWidth: 120,
-    fontSize: -2,
-    firstClaimLines: ["Прямой удар против", "вирусов гриппа и ОРВИ"],
+    fontSize: -2.5,
+    firstClaimLines: ["Прямой удар","против вирусов","гриппа и ОРВИ"],
+    secondClaimLines: ["Антивирусный"," эффект через час"], 
     fullBottomLegal: true,
-    photoY:-10, 
+    photoY:-20, 
+    photo:{x:-40},
+    photoX:10,
+    pack:{width:50, y:8, x:-70},
     markFont:-1
   },
 
-  "1020x297": {fontSize:3, firstClaimLines: ["Прямой удар против", "вирусов гриппа и ОРВИ"],     secondClaimLines: ["Антивирусный","эффект через час"], pack:{width:180,  x:-125, y:-20}, logo:{x:20}, bullets:{x:20}},
-  "1068x297": {fontSize:3, firstClaimLines: ["Прямой удар против", "вирусов гриппа и ОРВИ"],     secondClaimLines: ["Антивирусный","эффект через час"], pack:{width:180,  x:-125, y:-20}, logo:{x:20}, bullets:{x:20}}
+  "1020x297": {fontSize:3,  pack:{x:-65, y:-10}, logo:{x:40}, bullets:{x:40}},
+  "1068x297": {fontSize:3,  pack:{x:-75, y:-10}, logo:{x:40}, bullets:{x:40}}
 };
 
 /* Поправки плавно интерполируются вокруг конкретных контрольных размеров.
@@ -167,7 +175,7 @@ function resolveAdjustments(width, height) {
     if (influence > 0.00001) all.push({ values, influence });
   }
 
-  // Независимая интерполяция каждого параметра; дефолт всегда равен нулю.
+  // Независимая интерполяция числовых поправок, без флагов и массивов.
   const merged = {};
   const add = (target, delta, weight) => {
     for (const [key, value] of Object.entries(delta)) {
@@ -213,55 +221,82 @@ function render() {
  const tweaks = resolveAdjustments(banner.offsetWidth, banner.offsetHeight);
  // Строки и переносы применяем только к точному контрольному формату.
 
- const needBreak = exactTweaks.markBreak === true;
- mark.innerHTML =
-   'РУ ЛП-№ (007244)- (РГ-RU).' +
-   (needBreak ? '<br>' : ' ') +
-   'Реклама. Рекламодатель ООО «Завод Медсинтез». ИНН 6629012040.';
+ const registration = 'РУ ЛП-№ (007244)- (РГ-RU).';
+ const advertiser = 'Реклама. Рекламодатель ООО «Завод Медсинтез». ИНН 6629012040.';
+ mark.textContent = registration + ' ' + advertiser;
 
  /* Typography is scaled uniformly (not stretched), anchored to available space. */
  const textScale=Math.min(sx,sy);const readable=Math.min(Math.max(textScale,.60),2.5);
 place(photo, adjustBox(d.photo, tweaks.photo), sx, sy);
+ place(brand, adjustBox(d.brand, tweaks.logo), sx, sy);
+ if (exactTweaks.logoWidth != null) brand.style.width = px(exactTweaks.logoWidth);
 
- // Исходник фотографии выбирается по композиции или настройке формата.
- const photoSource = exactTweaks.photoType === 'vertical'
-     ? 'photo_vertical.jpg'
-     : d.source;
+ // Общая защита вертикальной композиции: фото не касается логотипа.
+ // Сохраняем утвержденную позицию логотипа, высоту тезисов и упаковку.
+ // Корректируем только нижнюю границу фото до расчета cover/кадрирования.
+ if (key === 'portrait') {
+     const minPhotoLogoGap = 10;
+     const photoTop = parseFloat(photo.style.top) || 0;
+     const brandTop = parseFloat(brand.style.top) || 0;
+     const maximumPhotoHeight = brandTop - minPhotoLogoGap - photoTop;
+     if (maximumPhotoHeight > 0 && photo.clientHeight > maximumPhotoHeight) {
+         photo.style.height = px(maximumPhotoHeight);
+     }
+ }
 
+ // Источник изображения: ручное исключение остается доступно на контрольной точке.
+ const photoSource = exactTweaks.photoType === 'vertical' ? 'photo_vertical.jpg' : d.source;
  photo.style.backgroundImage = `url('assets/${photoSource}')`;
  photo.style.backgroundRepeat = 'no-repeat';
  photo.style.clipPath = d.clip;
 
- // Реальный масштаб cover на основе размеров исходных файлов.
- // Фото остается внутри той же маски; менять можно только photoX/Y/Scale.
- const imageDimensions = {
+ // Масштаб относительно cover, а не относительно ширины блока.
+ const dimensions = {
      'photo.jpg': [1822, 1016],
      'photo_vertical.jpg': [1133, 2048]
  };
- const [naturalW, naturalH] = imageDimensions[photoSource];
- const imageScale = Math.max(
-     photo.clientWidth / naturalW,
-     photo.clientHeight / naturalH
- );
- const photoScale = Math.max(0.1, exactTweaks.photoScale ?? 1);
- const scaledW = naturalW * imageScale * photoScale;
- const scaledH = naturalH * imageScale * photoScale;
+
+ 
+ const [naturalW, naturalH] = dimensions[photoSource];
+ const cover = Math.max(photo.clientWidth / naturalW, photo.clientHeight / naturalH);
+ const zoom = Math.max(1, exactTweaks.photoScale ?? 1);
+ const scaledW = naturalW * cover * zoom;
+ const scaledH = naturalH * cover * zoom;
  photo.style.backgroundSize = `${px(scaledW)} ${px(scaledH)}`;
 
- // Независимое перемещение по осям, без повторных переопределений.
- const photoX = (tweaks.photoX ?? 0) + (tweaks.photoShift ?? 0);
- const photoY = tweaks.photoY ?? 0;
+ // Опорное кадрирование. На промежуточных размерах удерживаем лицо и ракетку
+ // ближе к центру видимой области, но не меняем заданное пользователем
+ // кадрирование точно на контрольных точках.
+ const isExact = Object.prototype.hasOwnProperty.call(formatAdjustments, sizeKey);
+ const focal = photoSource === 'photo_vertical.jpg'
+     ? { x: 0.50, y: 0.46 }
+     : { x: 0.48, y: 0.51 }; // середина между ракеткой и лицом
  const [baseX = 'center', baseY = 'center'] = d.pos.split(/\s+/);
- const toPosition = value => ({
-     left: '0%', top: '0%',
-     center: '50%', right: '100%', bottom: '100%'
- }[value] ?? value);
- photo.style.backgroundPosition =
-     `calc(${toPosition(baseX)} + ${photoX}px) ` +
-     `calc(${toPosition(baseY)} + ${photoY}px)`;
+ const toFraction = value => {
+     if (value === 'left' || value === 'top') return 0;
+     if (value === 'right' || value === 'bottom') return 1;
+     if (value === 'center') return 0.5;
+     if (value.endsWith('%')) return parseFloat(value) / 100;
+     return 0.5;
+ };
+ const photoX = (tweaks.photoX || 0) + (tweaks.photoShift || 0);
+ const photoY = tweaks.photoY || 0;
+ const boxW = photo.clientWidth;
+ const boxH = photo.clientHeight;
+ let renderedX = (boxW - scaledW) * toFraction(baseX) + photoX;
+ let renderedY = (boxH - scaledH) * toFraction(baseY) + photoY;
+ if (!isExact) {
+     // Ограничиваем случайные выбросы смещений на нестандартных размерах.
+     const centeredX = boxW * 0.5 - scaledW * focal.x;
+     const centeredY = boxH * 0.5 - scaledH * focal.y;
+     renderedX = renderedX * 0.35 + centeredX * 0.65;
+     renderedY = renderedY * 0.55 + centeredY * 0.45;
+ }
+ // Изображение не должно оставлять пустоты внутри видимой маски.
+ renderedX = Math.min(0, Math.max(boxW - scaledW, renderedX));
+ renderedY = Math.min(0, Math.max(boxH - scaledH, renderedY));
+ photo.style.backgroundPosition = `${px(renderedX)} ${px(renderedY)}`;
 
- place(brand,adjustBox(d.brand,tweaks.logo),sx,sy);
- if (exactTweaks.logoWidth != null) brand.style.width = px(exactTweaks.logoWidth);
  place(claims,adjustBox(d.claims,tweaks.bullets),sx,sy);
  place(pack,adjustBox(d.pack,tweaks.pack),sx,sy);
  place(mark,adjustBox(d.mark,tweaks.mark),sx,sy);
@@ -278,60 +313,259 @@ place(photo, adjustBox(d.photo, tweaks.photo), sx, sy);
  // Подложка на ширину всего баннера, охватывает обе нижние надписи.
  bg.style.height = px(Math.max(d.bg * sy, medHeight + 28));
  bg.style.display = 'block';
- claims.style.fontSize=px(Math.max(7,d.fs*readable+(tweaks.fontSize||0)));claims.style.lineHeight=key==='strip'?'1.1':'1.15';claims.style.gap=px(Math.max(0,d.gap*sy+(tweaks.bulletsGap||0)));
+ claims.style.fontSize=px(Math.max(7,d.fs*readable+(tweaks.fontSize||0)));claims.style.lineHeight=key==='strip'?'1.1':'1.15';claims.style.gap=px(Math.max(0,d.gap*sy+(tweaks.bulletsGap||0)) + (key === 'portrait' ? 2 : key === 'square' ? 2 : 1));
  claims.querySelectorAll('.claim').forEach(el=>el.style.gap=px(d.claimGap*sx));
- claims.querySelectorAll('.dot').forEach(el=>Object.assign(el.style,{width:px(Math.max(3,d.dot[0]*readable)),height:px(Math.max(3,d.dot[1]*readable)),marginTop:px(d.dot[2]*readable)}));
+ // Буллеты имеют пропорции 9:5, размер зависит от типографики.
+ const bulletW = Math.max(4, Math.min(12, 0.60 * parseFloat(claims.style.fontSize)));
+ claims.querySelectorAll('.dot').forEach(el => Object.assign(el.style, {
+     width: px(bulletW),
+     height: px(bulletW * 5 / 9),
+     marginTop: px(bulletW * 0.43)
+ }));
  mark.style.fontSize=px(Math.max(6, (key==='square'?11:key==='wide'?13:key==='strip'?11:9)*readable+(tweaks.markFont||0)));mark.style.lineHeight='1';
- // Нижняя маркировка и медицинский дисклеймер.
- // При смене формата возвращаем обычное расположение, чтобы не оставались
- // старые inline-стили от режима fullBottomLegal.
- mark.style.right = 'auto';
- mark.style.bottom = 'auto';
- mark.style.textAlign = 'left';
- mark.style.whiteSpace = (key === 'strip' || key === 'portrait')
-     ? 'nowrap' : 'normal';
- bg.style.left = '0px';
- bg.style.bottom = '0px';
- bg.style.width = '100%';
+ 
+ 
+ if (key === 'portrait') {
+    mark.style.fontSize = px(
+        parseFloat(mark.style.fontSize) - 1
+    );
+}
+ // Текст тезисов: перенос только по смысловым группам.
+ // Неразрывные фразы не оставят одиночные «и», «ОРВИ» или «час».
+ c1.innerHTML = 'Прямой удар против вирусов <span style="white-space:nowrap">гриппа и ОРВИ</span>';
+ c2.innerHTML = 'Антивирусный эффект <span style="white-space:nowrap">через час</span>';
+ claims.style.overflowWrap = 'normal';
+ claims.style.wordBreak = 'normal';
 
- if (exactTweaks.fullBottomLegal === true) {
-     const padX = exactTweaks.legalPadX ?? 8;
-     const gap = exactTweaks.legalGap ?? 2;
-     const legalWidth = Math.max(8, w - 2 * padX);
-     const medH = (w * h * 0.07) / legalWidth;
+ // ------------------------------------------------------------------
+ // Разделение текста и упаковки.
+ // Квадрат: тезисы по полной ширине правой колонки, упаковка ниже.
+ // Остальные: текст ограничен левой границей упаковки только если
+ // они реально находятся на одной высоте.
+ // ------------------------------------------------------------------
+ const packGap = 8;
+ const edgePad = 7;
+ const claimLeft = parseFloat(claims.style.left) || 0;
+ const claimTop = parseFloat(claims.style.top) || 0;
+ const packLeft = parseFloat(pack.style.left) || 0;
+ const packTop = parseFloat(pack.style.top) || 0;
+ const packWidth = parseFloat(pack.style.width) || 0;
+ const packHeight = parseFloat(pack.style.height) || 0;
+ const originalClaimWidth = parseFloat(claims.style.width) || 0;
+ // Только для 1020x297 и 1068x297
+if (
+    sizeKey === '1020x297' ||
+    sizeKey === '1068x297'
+) {
+    // Фиксируем ровно две строки первого тезиса
+    c1.innerHTML =
+        '<span style="white-space:nowrap">Прямой удар против</span>' +
+        '<br>' +
+        '<span style="white-space:nowrap">вирусов гриппа и ОРВИ</span>';
+}
 
-     // Одинарная строка мед. ценза на всю ширину поверх фотографии.
-     medical.src = 'assets/medical.svg';
-     Object.assign(medical.style, {
-         left: px(padX),
-         top: 'auto',
-         bottom: '2px',
-         width: px(legalWidth),
-         height: px(medH)
-     });
 
-     Object.assign(mark.style, {
-         transform: 'none',
-         left: px(padX),
-         right: 'auto',
-         top: 'auto',
-         bottom: px(medH + gap + 2),
-         width: px(legalWidth),
-         height: 'auto',
-         whiteSpace: 'normal',
-         textAlign: 'left'
-     });
+ const maxTextWidth = Math.max(30, w - edgePad - claimLeft);
+ const squareStack = key === 'square';
+ // Три вертикальных формата используют двухколоночную композицию,
+ // как 250x430 и 259x455. Сохранены исходные правила остальных форматов.
+ const sidePackLayout = ['282x400', '310x400', '345x400'].includes(sizeKey);
 
-     const markH = mark.getBoundingClientRect().height;
-     bg.style.height = px(medH + gap + markH + 8);
+
+ // Одна точка задания ширины. Сначала используем свободное пространство,
+ // затем для широких макетов резервируем не менее 400 px под две строки.
+ const wideTwoLines = key === 'wide' && h >= 250 && w >= 950;
+ const freeToPack = Math.max(60, packLeft - packGap - claimLeft);
+ const desiredTextWidth = squareStack
+     ? maxTextWidth
+     : wideTwoLines
+         ? Math.min(maxTextWidth, Math.max(400, freeToPack))
+         : Math.min(originalClaimWidth, maxTextWidth);
+ claims.style.width = px(desiredTextWidth);
+ claims.style.height = 'auto';
+ claims.querySelectorAll('.claim').forEach(el => {
+     el.style.minWidth = '0';
+     el.style.width = '100%';
+     const span = el.querySelector('span');
+     if (span) {
+         span.style.minWidth = '0';
+         span.style.maxWidth = '100%';
+     }
+ });
+
+ if (sidePackLayout) {
+     // Фото и логотип остаются из исходного портретного макета.
+     // Тезисы занимают левую колонку, упаковка справа шириной 100–110 px.
+     const contentLeft = Math.max(10, claimLeft);
+     const contentRight = w - 8;
+     const desiredPackWidth = Math.min(110, Math.max(100, w * 0.32));
+     const availablePackWidth = contentRight - contentLeft - 95 - packGap;
+     const finalPackWidth = Math.min(desiredPackWidth, availablePackWidth);
+     const finalPackLeft = contentRight - finalPackWidth;
+     const textColumnWidth = finalPackLeft - packGap - contentLeft;
+     const top = Math.max(brand.getBoundingClientRect().bottom - banner.getBoundingClientRect().top + 7, Math.min(claimTop, h * 0.625));
+     claims.style.left = px(contentLeft);
+     claims.style.top = px(top);
+     claims.style.width = px(textColumnWidth);
+     claims.style.height = 'auto';
+     // Крупная упаковка привязана по top, а не к нижней границе.
+pack.style.left = px(finalPackLeft);
+     pack.style.top = px(Math.max(top - 6, h * 0.59));
+     pack.style.width = px(finalPackWidth);
+     pack.style.height = px(finalPackWidth * packHeight / Math.max(1, packWidth));
+     // Упаковка не должна закрывать юридическую информацию.
+     const legalTop = h * 0.84;
+     if (parseFloat(pack.style.top) + parseFloat(pack.style.height) > legalTop) {
+         pack.style.height = px(Math.max(40, legalTop - parseFloat(pack.style.top)));
+     }
+ } else if (squareStack) {
+     // Шрифт из formatAdjustments не уменьшаем: отводим достаточно
+     // ширины тезисам, затем размещаем упаковку под ними.
+     const brandBottom = brand.getBoundingClientRect().bottom - banner.getBoundingClientRect().top - 1;
+     const desiredClaimsTop = Math.max(claimTop, brandBottom + 7);
+     claims.style.top = px(desiredClaimsTop);
+     const claimsHeight = claims.getBoundingClientRect().height;
+     const bottomLegalReserve = Math.max(52, h * 0.20);
+     const bottomLimit = h - bottomLegalReserve;
+     const availablePackHeight = Math.max(22, bottomLimit - (desiredClaimsTop + claimsHeight + 10));
+     const packAspect = Math.max(0.1, packWidth / Math.max(1, packHeight));
+     const preferredWidth = Math.min(maxTextWidth * 0.86, Math.max(packWidth, w * 0.32));
+     const finalWidth = Math.max(30, Math.min(preferredWidth, availablePackHeight * packAspect));
+     const finalHeight = finalWidth / packAspect;
+     // Верхняя координата связана с тезисами, а не с нижней границей.
+     const finalTop = Math.max(desiredClaimsTop + claimsHeight + 9, Math.min(packTop, bottomLimit - finalHeight));
+     // Упаковка под тезисами всегда выравнивается по их левому краю.
+     pack.style.left = px(claimLeft);
+     pack.style.top = px(finalTop);
+     pack.style.width = px(finalWidth);
+     pack.style.height = px(finalHeight);
+ } else {
+     const actualClaimsHeight = claims.getBoundingClientRect().height;
+     const intersects = packTop < claimTop + actualClaimsHeight + 2 &&
+         packTop + packHeight > claimTop - 2;
+     const freeSpace = packLeft - claimLeft - packGap;
+     if (wideTwoLines && intersects) {
+         // В wide ручное pack.x является исходной координатой.
+         // Не прижимаем упаковку к правому краю повторным расчетом.
+         const actualPackLeft = Math.max(claimLeft + packGap + 35, packLeft);
+         const safePackWidth = Math.min(packWidth, Math.max(20, w - edgePad - actualPackLeft));
+         const scale = safePackWidth / Math.max(1, packWidth);
+         pack.style.left = px(actualPackLeft);
+         pack.style.top = px(packTop);
+         pack.style.width = px(safePackWidth);
+         pack.style.height = px(packHeight * scale);
+         // Текст занимает только свободную область слева от упаковки.
+         // Значения pack.x и bullets.x из formatAdjustments больше не теряются.
+         claims.style.width = px(Math.max(35, Math.min(desiredTextWidth, actualPackLeft - claimLeft - packGap)));
+     } else if (intersects && freeSpace > 85) {
+         claims.style.width = px(Math.min(desiredTextWidth, freeSpace));
+     } else if (intersects && freeSpace <= 85) {
+         // Когда упаковка и текст слишком близко, сначала освобождаем
+         // колонку за счет упаковки, а не уменьшаем шрифт.
+         const minColumn = Math.min(maxTextWidth, Math.max(90, w * 0.26));
+         const packRoom = Math.max(28, w - edgePad - claimLeft - minColumn - packGap);
+         const scale = Math.min(1, packRoom / Math.max(packWidth, 1));
+         const nextW = packWidth * scale;
+         const nextH = packHeight * scale;
+         pack.style.width = px(nextW);
+         pack.style.height = px(nextH);
+         pack.style.left = px(Math.max(claimLeft + minColumn + packGap, w - edgePad - nextW));
+         pack.style.top = px(packTop); // top остается опорной координатой
+         claims.style.width = px(Math.min(maxTextWidth, minColumn));
+     }
  }
- if(key==='square'){c1.innerHTML='Прямой удар<br>против вирусов<br>гриппа и ОРВИ';c2.innerHTML='Антивирусный<br>эффект через час';}
- else if(key==='portrait'){c1.innerHTML='Прямой удар против вирусов гриппа<br>и ОРВИ';c2.innerHTML='Антивирусный<br>эффект через час';}
- else if(key==='wide'){c1.innerHTML='Прямой удар против вирусов гриппа<br> и ОРВИ';c2.textContent='Антивирусный эффект через час';}
- else{c1.textContent='Прямой удар против вирусов гриппа и ОРВИ';c2.textContent='Антивирусный эффект через час';}
- // Переносы задаются прямо в formatAdjustments.
- if (exactTweaks.firstClaimLines) c1.innerHTML = exactTweaks.firstClaimLines.join('<br>');
- if (exactTweaks.secondClaimLines) c2.innerHTML = exactTweaks.secondClaimLines.join('<br>');
+
+ // Не даем упаковке уползти за нижнюю границу на произвольных размерах.
+ // На квадратных она уже располагается под тезисами.
+ if (!squareStack && !sidePackLayout) {
+     const currentTop = parseFloat(pack.style.top) || 0;
+     const currentHeight = parseFloat(pack.style.height) || 0;
+     const bottomLimit = h - Math.max(15, h * 0.09);
+     if (currentTop + currentHeight > bottomLimit && currentHeight > 0) {
+         const newHeight = Math.max(15, bottomLimit - Math.max(0, currentTop));
+         const scale = Math.min(1, newHeight / currentHeight);
+         pack.style.width = px((parseFloat(pack.style.width) || 0) * scale);
+         pack.style.height = px(currentHeight * scale);
+     }
+ }
+
+ // Нижний блок: дисплейная площадь дисклеймера 7%, 3–4 px до маркировки.
+ // Оба элемента остаются внутри баннера и переупаковываются при изменении ширины.
+ const legalGap = 4;
+ const legalPadX = Math.max(3, Math.min(8, w * 0.025));
+ const fullLegal = exactTweaks.fullBottomLegal === true || w < 440 || key === 'square' || key === 'portrait';
+ const legalLeft = fullLegal ? legalPadX : Math.max(legalPadX, parseFloat(mark.style.left) || 0);
+ const legalWidth = Math.max(16, w - legalLeft - legalPadX);
+ const medicalLeft = fullLegal ? legalPadX : Math.max(3, Math.min(parseFloat(medical.style.left) || 3, w - 16));
+ const medicalWidth = Math.max(16, w - medicalLeft - legalPadX);
+ // Сохраняем расчетную площадь мед. ценза ровно 7% от баннера.
+ const medicalHeight = (w * h * 0.07) / medicalWidth;
+ const medicalBottom = 2;
+ medical.src = 'assets/' + (key === 'square' || key === 'portrait' ? 'medical_2line.svg' : 'medical.svg');
+ Object.assign(medical.style, {
+     left: px(medicalLeft), top: 'auto', bottom: px(medicalBottom),
+     width: px(medicalWidth), height: px(medicalHeight)
+ });
+ Object.assign(mark.style, {
+     left: px(legalLeft), right: 'auto', top: 'auto',
+     bottom: px(medicalBottom + medicalHeight + legalGap),
+     width: px(legalWidth), height: 'auto', transform: 'none',
+     whiteSpace: 'normal', textAlign: 'left', overflowWrap: 'break-word'
+ });
+ // В одну строку только если вся надпись действительно помещается.
+ // Если не помещается, регистрационный номер целиком в первой строке,
+ // остальной текст начинается строго со второй строки и переносится сам.
+ const markFont = getComputedStyle(mark).font;
+ const canvas = document.createElement('canvas');
+ const measure = canvas.getContext('2d');
+ measure.font = markFont;
+ const oneLineFits = measure.measureText(registration + ' ' + advertiser).width <= legalWidth - 1;
+ mark.innerHTML = '<span style="white-space:nowrap">' + registration + '</span>' +
+     (oneLineFits ? ' ' : '<br>') + advertiser;
+ // Держим надпись читаемой даже при нескольких строках.
+ const maxMarkHeight = Math.max(8, h * 0.19);
+ if (mark.getBoundingClientRect().height > maxMarkHeight) {
+     const current = parseFloat(mark.style.fontSize);
+     mark.style.fontSize = px(Math.max(5.5, current * maxMarkHeight / mark.getBoundingClientRect().height));
+ }
+ const markHeight = mark.getBoundingClientRect().height;
+ bg.style.left = '0px';
+ bg.style.width = '100%';
+ bg.style.bottom = '0px';
+ bg.style.height = px(Math.min(h, medicalHeight + legalGap + markHeight + medicalBottom + 14));
+ bg.style.display = 'block';
+
+ // Единая проверка коллизии упаковки и логотипа на ЛЮБОМ размере.
+ // Применяем после всех основных расчетов, чтобы другие ветки не отменили позицию.
+ const brandBox = brand.getBoundingClientRect();
+ const packBox = pack.getBoundingClientRect();
+ const minBrandPackGap = 7;
+ const overlapsBrand =
+     packBox.left < brandBox.right + minBrandPackGap &&
+     packBox.right > brandBox.left - minBrandPackGap &&
+     packBox.top < brandBox.bottom + minBrandPackGap &&
+     packBox.bottom > brandBox.top - minBrandPackGap;
+
+ if (overlapsBrand) {
+     // Не смещаем утвержденные логотип и текст. Упаковка идет ниже логотипа.
+     const bannerBox = banner.getBoundingClientRect();
+     const brandBottom = brandBox.bottom - bannerBox.top;
+     const legalTop = mark.getBoundingClientRect().top - bannerBox.top;
+     const nextTop = Math.max(parseFloat(pack.style.top) || 0, brandBottom + minBrandPackGap);
+     const availableHeight = Math.max(0, legalTop - minBrandPackGap - nextTop);
+     const oldHeight = parseFloat(pack.style.height) || 0;
+     const oldWidth = parseFloat(pack.style.width) || 0;
+     if (availableHeight > 0 && oldHeight > 0) {
+         const factor = Math.min(1, availableHeight / oldHeight);
+         // Сохраняем выравнивание упаковки справа при уменьшении масштаба.
+         const rightEdge = (parseFloat(pack.style.left) || 0) + oldWidth;
+         pack.style.top = px(nextTop);
+         pack.style.width = px(oldWidth * factor);
+         pack.style.height = px(oldHeight * factor);
+         pack.style.left = px(rightEdge - oldWidth * factor);
+     }
+ }
+
  }
 if('ResizeObserver'in window)new ResizeObserver(render).observe(banner);else window.addEventListener('resize',render);
 render();})();
